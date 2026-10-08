@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:habitos_app/screens/bienvenida_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -30,7 +31,7 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         colorScheme: .fromSeed(seedColor: Colors.greenAccent),
       ),
-      home: const MyHomePage(title: 'Mis Habitos'),
+      home: const BienvenidaScreen(),
     );
   }
 }

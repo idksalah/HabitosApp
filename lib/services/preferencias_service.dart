@@ -13,4 +13,24 @@ class PreferenciasService {
     await preferencias.setString(claveNombre, nombre);
     await preferencias.setInt(claveObjetivo, objetivo);
   }
+  static Future<String?> obtenerNombre() async {
+    final preferencias = await SharedPreferences.getInstance();
+
+    return preferencias.getString(claveNombre);
+  }
+
+  static Future<int?> obtenerObjetivo() async {
+    final preferencias = await SharedPreferences.getInstance();
+
+    return preferencias.getInt(claveObjetivo);
+  }
+  static Future<bool> hayDatosUsuario() async {
+    String? nombre = await obtenerNombre();
+    int? objetivo = await obtenerObjetivo();
+
+    return nombre != null &&
+        nombre.isNotEmpty &&
+        objetivo != null &&
+        objetivo > 0;
+  }
 }

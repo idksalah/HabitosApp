@@ -1,6 +1,6 @@
-import '../services/preferencias_service.dart';
-
 import 'package:flutter/material.dart';
+import '../services/preferencias_service.dart';
+import 'inicio_screen.dart';
 
 class BienvenidaScreen extends StatefulWidget {
   const BienvenidaScreen({super.key});
@@ -48,8 +48,25 @@ class _BienvenidaScreenState extends State<BienvenidaScreen> {
 
         if (!mounted) return;
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Datos guardados correctamente')),
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => InicioScreen(
+              nombre: nombre,
+              objetivo: numeroObjetivo,
+            ),
+          ),
+        );
+
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => InicioScreen(
+              nombre: nombre,
+              objetivo: numeroObjetivo,
+            ),
+          ),
         );
       }
     }

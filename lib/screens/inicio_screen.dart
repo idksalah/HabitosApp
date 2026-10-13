@@ -1,71 +1,135 @@
-
 import 'package:flutter/material.dart';
 
-class InicioScreen extends StatelessWidget {
+import '../models/habito.dart';
+import '../services/preferencias_service.dart';
+import '../widgets/tarjeta_habito.dart';
+
+class InicioScreen extends StatefulWidget {
   final String nombre;
   final int objetivo;
 
-  const InicioScreen({
-    super.key,
-    required this.nombre,
-    required this.objetivo,
-  });
+  const InicioScreen({super.key, required this.nombre, required this.objetivo});
+
+  @override
+  State<InicioScreen> createState() {
+    return _InicioScreenState();
+  }
+}
+
+class _InicioScreenState extends State<InicioScreen> {
+  List<Habito> habitos = [];
+  bool cargando = true;
+
+  @override
+  void initState() {
+    super.initState();
+    cargarHabitos();
+  }
+
+  Future<void> cargarHabitos() async {
+    List<Habito> lista = await PreferenciasService.obtenerHabitos();
+
+    if (!mounted) return;
+
+    setState(() {
+      habitos = lista;
+      cargando = false;
+    });
+  }
+
+  Future<void> guardarNuevoHabito(String nombre) async {
+    Habito nuevoHabito = Habito(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      nombre: nombre,
+      color: Colors.green.value,
+    );
+
+    List<Habito> nuevaLista = List.from(habitos);
+    nuevaLista.add(nuevoHabito);
+
+    await PreferenciasService.guardarHabitos(nuevaLista);
+
+    if (!mounted) return;
+
+    setState(() {
+      habitos = nuevaLista;
+    });
+  }
+
+  void mostrarFormulario() {
+    TextEditingController nombreController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Nuevo hábito'),
+          content: TextField(
+            controller: nombreController,
+            decoration: const InputDecoration(labelText: 'Nombre del hábito'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                String nombre = nombreController.text.trim();
+
+                if (nombre.isEmpty) {
+                  return;
+                }
+
+                await guardarNuevoHabito(nombre);
+
+                if (!context.mounted) return;
+
+                Navigator.pop(context);
+              },
+              child: const Text('Guardar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mis hábitos'),
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.check_circle_outline,
-                size: 80,
-                color: Colors.green,
-              ),
-              const SizedBox(height: 20),
-              Text(
-                '¡Hola, $nombre!',
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 15),
-              const Text(
-                'Organiza tus hábitos diarios',
-                style: TextStyle(fontSize: 18),
-              ),
-              const SizedBox(height: 25),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'Tu objetivo diario',
-                        style: TextStyle(fontSize: 18),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        '$objetivo hábitos',
-                        style: const TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+      appBar: AppBar(title: const Text('Mis hábitos')),
+      body: cargando
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                Text(
+                  '¡Hola, ${widget.nombre}!',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
-            ],
-          ),
-        ),
+                Text('Objetivo diario: ${widget.objetivo} hábitos'),
+                Expanded(
+                  child: habitos.isEmpty
+                      ? const Center(child: Text('Todavía no tienes hábitos'))
+                      : ListView.builder(
+                          itemCount: habitos.length,
+                          itemBuilder: (context, index) {
+                            return TarjetaHabito(habito: habitos[index]);
+                          },
+                        ),
+                ),
+              ],
+            ),
+
+      // Botón para añadir hábitos
+      floatingActionButton: FloatingActionButton(
+        onPressed: mostrarFormulario,
+        child: const Icon(Icons.add),
       ),
     );
   }

@@ -1,3 +1,5 @@
+import '../services/preferencias_service.dart';
+
 import 'package:flutter/material.dart';
 
 class BienvenidaScreen extends StatefulWidget {
@@ -20,8 +22,8 @@ class _BienvenidaScreenState extends State<BienvenidaScreen> {
     super.dispose();
   }
 
-  void continuar() {
-    String nombre = nombreController.text;
+  Future<void> continuar() async {
+    String nombre = nombreController.text.trim();
     String objetivo = objetivoController.text;
 
     if (nombre.isEmpty) {
@@ -30,16 +32,25 @@ class _BienvenidaScreenState extends State<BienvenidaScreen> {
       );
     } else if (objetivo.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('El objetivo debe ser mayor que cero')),
+        const SnackBar(content: Text('Debes introducir tu objetivo diario')),
       );
     } else {
-      int numeroObjetivo = int.parse(objetivo);
+      int? numeroObjetivo = int.tryParse(objetivo);
 
-      if (numeroObjetivo <= 0) {
-        print('El objetivo debe ser mayor que cero');
+      if (numeroObjetivo == null || numeroObjetivo <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Introduce un número entero mayor que cero'),
+          ),
+        );
       } else {
-        print('Nombre: $nombre');
-        print('Objetivo: $numeroObjetivo');
+        await PreferenciasService.guardarDatosUsuario(nombre, numeroObjetivo);
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Datos guardados correctamente')),
+        );
       }
     }
   }

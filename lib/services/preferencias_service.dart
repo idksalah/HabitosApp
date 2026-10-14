@@ -1,7 +1,9 @@
-// Importamos librerias necesarias
+// Importamos las librerías necesarias.
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/habito.dart';
 
 class PreferenciasService {
@@ -9,11 +11,13 @@ class PreferenciasService {
   static const String claveNombre = 'nombre';
   static const String claveObjetivo = 'objetivo';
   static const String claveHabitos = 'habitos';
+  static const String claveNombresHabitos = 'nombresHabitos';
   static const String claveTemaOscuro = 'temaOscuro';
   static const String claveTamanoLetra = 'tamanoLetra';
   static const String claveOcultarCompletados = 'ocultarCompletados';
   static const String claveAperturas = 'aperturas';
   static const String claveUltimaApertura = 'ultimaApertura';
+  static const String claveAperturaAnterior = 'aperturaAnterior';
 
   // Valores que pueden consultar las pantallas.
   static final ValueNotifier<ThemeMode> temaActual = ValueNotifier(
@@ -95,9 +99,15 @@ class PreferenciasService {
     }
 
     await preferencias.setString(claveHabitos, jsonEncode(listaJson));
+
+    // También guardamos los nombres como List<String>.
+    // Esto permite utilizar el tipo de dato específico de SharedPreferences.
+    final nombres = habitos.map((habito) => habito.nombre).toList();
+
+    await preferencias.setStringList(claveNombresHabitos, nombres);
   }
 
-  // Recupera los hábitos guardados.
+  // Recupera los hábitos guardados desde JSON.
   static Future<List<Habito>> obtenerHabitos() async {
     final preferencias = await SharedPreferences.getInstance();
     final textoJson = preferencias.getString(claveHabitos);
@@ -116,6 +126,13 @@ class PreferenciasService {
     return habitos;
   }
 
+  // Recupera la lista de nombres usando getStringList().
+  static Future<List<String>> obtenerNombresHabitos() async {
+    final preferencias = await SharedPreferences.getInstance();
+
+    return preferencias.getStringList(claveNombresHabitos) ?? [];
+  }
+
   // Comprueba si ya hay datos de usuario.
   static Future<bool> hayDatosUsuario() async {
     final nombre = await obtenerNombre();
@@ -127,27 +144,40 @@ class PreferenciasService {
         objetivo > 0;
   }
 
-  // Registra una apertura y la fecha y hora de la última.
+  // Registra una apertura y conserva la fecha de la sesión anterior.
   static Future<void> registrarApertura() async {
     final preferencias = await SharedPreferences.getInstance();
 
     final aperturas = preferencias.getInt(claveAperturas) ?? 0;
+    final ultimaApertura = preferencias.getString(claveUltimaApertura);
+
+    if (ultimaApertura != null) {
+      await preferencias.setString(claveAperturaAnterior, ultimaApertura);
+    }
+
     await preferencias.setInt(claveAperturas, aperturas + 1);
 
     final ahora = DateTime.now().toIso8601String();
+
     await preferencias.setString(claveUltimaApertura, ahora);
   }
 
-  // Recupera el número de aperturas.
+  // Recupera el número total de aperturas.
   static Future<int> obtenerAperturas() async {
     final preferencias = await SharedPreferences.getInstance();
     return preferencias.getInt(claveAperturas) ?? 0;
   }
 
-  // Recupera la última apertura.
+  // Recupera la fecha y hora de la última apertura.
   static Future<String?> obtenerUltimaApertura() async {
     final preferencias = await SharedPreferences.getInstance();
     return preferencias.getString(claveUltimaApertura);
+  }
+
+  // Recupera la fecha y hora de la apertura anterior.
+  static Future<String?> obtenerAperturaAnterior() async {
+    final preferencias = await SharedPreferences.getInstance();
+    return preferencias.getString(claveAperturaAnterior);
   }
 
   // Borra todos los datos y restablece los ajustes.

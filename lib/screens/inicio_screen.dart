@@ -6,7 +6,6 @@ import '../models/habito.dart';
 import '../services/preferencias_service.dart';
 import '../widgets/tarjeta_habito.dart';
 import 'editar_habito_screen.dart';
-import 'editar_habito_screen.dart';
 
 class InicioScreen extends StatefulWidget {
   final String nombre;

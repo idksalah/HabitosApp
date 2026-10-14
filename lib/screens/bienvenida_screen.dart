@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import '../services/preferencias_service.dart';
 import 'inicio_screen.dart';
@@ -12,8 +13,11 @@ class BienvenidaScreen extends StatefulWidget {
 }
 
 class _BienvenidaScreenState extends State<BienvenidaScreen> {
-  final TextEditingController nombreController = TextEditingController();
-  final TextEditingController objetivoController = TextEditingController();
+  final TextEditingController nombreController =
+  TextEditingController();
+
+  final TextEditingController objetivoController =
+  TextEditingController();
 
   @override
   void dispose() {
@@ -23,76 +27,88 @@ class _BienvenidaScreenState extends State<BienvenidaScreen> {
   }
 
   Future<void> continuar() async {
-    String nombre = nombreController.text.trim();
-    String objetivo = objetivoController.text;
+    final String nombre = nombreController.text.trim();
+    final String objetivo = objetivoController.text.trim();
 
     if (nombre.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Debes introducir tu nombre')),
+        const SnackBar(
+          content: Text('Debes introducir tu nombre'),
+        ),
       );
-    } else if (objetivo.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Debes introducir tu objetivo diario')),
-      );
-    } else {
-      int? numeroObjetivo = int.tryParse(objetivo);
-
-      if (numeroObjetivo == null || numeroObjetivo <= 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Introduce un número entero mayor que cero'),
-          ),
-        );
-      } else {
-        await PreferenciasService.guardarDatosUsuario(nombre, numeroObjetivo);
-
-        if (!mounted) return;
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => InicioScreen(
-              nombre: nombre,
-              objetivo: numeroObjetivo,
-            ),
-          ),
-        );
-
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => InicioScreen(
-              nombre: nombre,
-              objetivo: numeroObjetivo,
-            ),
-          ),
-        );
-      }
+      return;
     }
+
+    if (objetivo.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Debes introducir tu objetivo diario'),
+        ),
+      );
+      return;
+    }
+
+    final int? numeroObjetivo = int.tryParse(objetivo);
+
+    if (numeroObjetivo == null || numeroObjetivo <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Introduce un número entero mayor que cero',
+          ),
+        ),
+      );
+      return;
+    }
+
+    await PreferenciasService.guardarDatosUsuario(
+      nombre,
+      numeroObjetivo,
+    );
+
+    if (!mounted) return;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => InicioScreen(
+          nombre: nombre,
+          objetivo: numeroObjetivo,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('HabitosApp')),
+      appBar: AppBar(
+        title: const Text('HabitosApp'),
+      ),
       body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Text(
                 'Bienvenido a HabitosApp',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 10),
-              const Text('Organiza tus hábitos diarios'),
+              const Text(
+                'Organiza tus hábitos diarios',
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 30),
               TextField(
                 controller: nombreController,
                 decoration: const InputDecoration(
-                  labelText: 'Nombre',
+                  labelText: 'Nombre del usuario',
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -101,15 +117,14 @@ class _BienvenidaScreenState extends State<BienvenidaScreen> {
                 controller: objetivoController,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
-                  labelText: 'Objetivo diario de habitos',
+                  labelText: 'Objetivo diario de hábitos',
                   border: OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 25),
-
               ElevatedButton(
                 onPressed: continuar,
-                child: const Text('Continuar'),
+                child: const Text('Comenzar'),
               ),
             ],
           ),

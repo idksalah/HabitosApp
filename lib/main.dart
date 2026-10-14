@@ -4,7 +4,11 @@ import 'package:habitos_app/screens/bienvenida_screen.dart';
 import 'package:habitos_app/screens/inicio_screen.dart';
 import 'package:habitos_app/services/preferencias_service.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await PreferenciasService.cargarAjustes();
+
   runApp(const MyApp());
 }
 
@@ -13,12 +17,38 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'HabitosApp',
-      theme: ThemeData(
-        colorScheme: .fromSeed(seedColor: Colors.greenAccent),
-      ),
-      home: const PantallaInicial(),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: PreferenciasService.temaActual,
+      builder: (context, tema, child) {
+        return ValueListenableBuilder<double>(
+          valueListenable: PreferenciasService.tamanoLetra,
+          builder: (context, tamano, child) {
+            return MaterialApp(
+              title: 'HabitosApp',
+              themeMode: tema,
+              theme: ThemeData(
+                colorScheme: ColorScheme.fromSeed(
+                  seedColor: Colors.greenAccent,
+                ),
+                textTheme: ThemeData.light()
+                    .textTheme
+                    .apply(fontSizeFactor: tamano),
+              ),
+              darkTheme: ThemeData(
+                brightness: Brightness.dark,
+                colorScheme: ColorScheme.fromSeed(
+                  seedColor: Colors.greenAccent,
+                  brightness: Brightness.dark,
+                ),
+                textTheme: ThemeData.dark()
+                    .textTheme
+                    .apply(fontSizeFactor: tamano),
+              ),
+              home: const PantallaInicial(),
+            );
+          },
+        );
+      },
     );
   }
 }

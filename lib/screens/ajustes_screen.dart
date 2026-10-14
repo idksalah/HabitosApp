@@ -1,5 +1,5 @@
-
 import 'package:flutter/material.dart';
+
 import '../services/preferencias_service.dart';
 
 class AjustesScreen extends StatelessWidget {
@@ -8,30 +8,16 @@ class AjustesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Ajustes'),
-      ),
+      appBar: AppBar(title: const Text('Ajustes')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text(
-            'Apariencia',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-
+          // Permite elegir el tema claro u oscuro.
           ValueListenableBuilder<ThemeMode>(
             valueListenable: PreferenciasService.temaActual,
             builder: (context, tema, child) {
               return SwitchListTile(
                 title: const Text('Tema oscuro'),
-                subtitle: const Text(
-                  'Cambiar entre el tema claro y el oscuro',
-                ),
-                secondary: const Icon(Icons.dark_mode),
                 value: tema == ThemeMode.dark,
                 onChanged: (oscuro) {
                   PreferenciasService.guardarTema(oscuro);
@@ -40,61 +26,91 @@ class AjustesScreen extends StatelessWidget {
             },
           ),
 
-          const Divider(),
+          const SizedBox(height: 16),
 
+          // Permite cambiar el tamaño de la letra.
           ValueListenableBuilder<double>(
             valueListenable: PreferenciasService.tamanoLetra,
             builder: (context, tamano, child) {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.format_size),
-                    title: Text('Tamaño de letra'),
-                    subtitle: Text(
-                      'Ajusta el tamaño del texto de la aplicación',
-                    ),
-                  ),
+                  Text('Tamaño de letra: ${tamano.toStringAsFixed(1)}'),
                   Slider(
                     value: tamano,
                     min: 0.8,
-                    max: 1.4,
-                    divisions: 6,
-                    label: '${(tamano * 100).round()}%',
+                    max: 1.5,
+                    divisions: 7,
+                    label: tamano.toStringAsFixed(1),
                     onChanged: (valor) {
                       PreferenciasService.guardarTamanoLetra(valor);
                     },
-                  ),
-                  Text(
-                    'Tamaño actual: ${(tamano * 100).round()}%',
                   ),
                 ],
               );
             },
           ),
 
-          const Divider(),
+          const SizedBox(height: 16),
 
+          // Permite ocultar los hábitos completados.
           ValueListenableBuilder<bool>(
-            valueListenable:
-            PreferenciasService.ocultarCompletados,
+            valueListenable: PreferenciasService.ocultarCompletados,
             builder: (context, ocultar, child) {
               return SwitchListTile(
-                title: const Text(
-                  'Ocultar hábitos completados',
-                ),
-                subtitle: const Text(
-                  'No mostrar los hábitos que ya has completado hoy',
-                ),
-                secondary: const Icon(Icons.visibility_off),
+                title: const Text('Ocultar hábitos completados'),
                 value: ocultar,
                 onChanged: (valor) {
-                  PreferenciasService.guardarOcultarCompletados(
-                    valor,
+                  PreferenciasService.guardarOcultarCompletados(valor);
+                },
+              );
+            },
+          ),
+
+          const SizedBox(height: 24),
+
+          // Borra los datos y vuelve a la bienvenida.
+          ElevatedButton.icon(
+            icon: const Icon(Icons.delete_outline),
+            label: const Text('Borrar todos los datos'),
+            onPressed: () async {
+              final confirmar = await showDialog<bool>(
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    title: const Text('Borrar datos'),
+                    content: const Text(
+                      'Se borrarán tus datos y tendrás que '
+                      'configurar la aplicación de nuevo. ¿Continuar?',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context, false);
+                        },
+                        child: const Text('Cancelar'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context, true);
+                        },
+                        child: const Text('Borrar'),
+                      ),
+                    ],
                   );
                 },
               );
+
+              if (confirmar != true || !context.mounted) return;
+
+              await PreferenciasService.borrarDatos();
+
+              if (!context.mounted) return;
+
+              // Cerramos las pantallas anteriores y volvemos
+              // a la bienvenida.
+              Navigator.of(context)
+                  .pushNamedAndRemoveUntil('/', (route) => false);
             },
           ),
         ],

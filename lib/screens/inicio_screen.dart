@@ -1,21 +1,18 @@
-
 import 'package:flutter/material.dart';
 import 'package:habitos_app/screens/estadisticas_screen.dart';
+import 'package:habitos_app/screens/ajustes_screen.dart';
+
 import '../models/habito.dart';
 import '../services/preferencias_service.dart';
-import 'package:habitos_app/screens/ajustes_screen.dart';
 import '../widgets/tarjeta_habito.dart';
+import 'editar_habito_screen.dart';
 import 'editar_habito_screen.dart';
 
 class InicioScreen extends StatefulWidget {
   final String nombre;
   final int objetivo;
 
-  const InicioScreen({
-    super.key,
-    required this.nombre,
-    required this.objetivo,
-  });
+  const InicioScreen({super.key, required this.nombre, required this.objetivo});
 
   @override
   State<InicioScreen> createState() => _InicioScreenState();
@@ -31,6 +28,7 @@ class _InicioScreenState extends State<InicioScreen> {
     cargarHabitos();
   }
 
+  // Recupera los hábitos guardados.
   Future<void> cargarHabitos() async {
     final lista = await PreferenciasService.obtenerHabitos();
 
@@ -42,6 +40,7 @@ class _InicioScreenState extends State<InicioScreen> {
     });
   }
 
+  // Devuelve la fecha de hoy en formato año-mes-día.
   String obtenerFechaHoy() {
     final hoy = DateTime.now();
     final mes = hoy.month.toString().padLeft(2, '0');
@@ -50,18 +49,18 @@ class _InicioScreenState extends State<InicioScreen> {
     return '${hoy.year}-$mes-$dia';
   }
 
-  int obtenerCompletadosHoy() {
-    final hoy = obtenerFechaHoy();
-
-    return habitos.where((habito) {
-      return habito.fechasCompletado.contains(hoy);
-    }).length;
+  // Comprueba si un hábito está completado hoy.
+  bool estaCompletadoHoy(Habito habito) {
+    return habito.fechasCompletado.contains(obtenerFechaHoy());
   }
 
-  Future<void> cambiarCompletado(
-      Habito habito,
-      bool completado,
-      ) async {
+  // Cuenta los hábitos completados hoy.
+  int obtenerCompletadosHoy() {
+    return habitos.where(estaCompletadoHoy).length;
+  }
+
+  // Marca o desmarca un hábito como completado.
+  Future<void> cambiarCompletado(Habito habito, bool completado) async {
     final hoy = obtenerFechaHoy();
 
     if (completado) {
@@ -79,6 +78,7 @@ class _InicioScreenState extends State<InicioScreen> {
     setState(() {});
   }
 
+  // Crea y guarda un hábito nuevo.
   Future<void> guardarNuevoHabito(String nombre) async {
     final nuevoHabito = Habito(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -98,60 +98,79 @@ class _InicioScreenState extends State<InicioScreen> {
     });
   }
 
+  // Abre el formulario para añadir un hábito.
   Future<void> mostrarFormulario() async {
     final controlador = TextEditingController();
 
-    final nombre = await showDialog<String>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Nuevo hábito'),
-          content: TextField(
-            controller: controlador,
-            autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'Nombre del hábito',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final texto = controlador.text.trim();
+    String? nombre;
 
-                if (texto.isNotEmpty) {
-                  Navigator.pop(context, texto);
+    try {
+      nombre = await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) {
+          return AlertDialog(
+            title: const Text('Nuevo hábito'),
+            content: TextField(
+              controller: controlador,
+              autofocus: false,
+              textInputAction: TextInputAction.done,
+              decoration: const InputDecoration(
+                labelText: 'Nombre del hábito',
+                border: OutlineInputBorder(),
+              ),
+              onSubmitted: (texto) {
+                final nombreIntroducido = texto.trim();
+
+                if (nombreIntroducido.isNotEmpty) {
+                  Navigator.of(dialogContext).pop(nombreIntroducido);
                 }
               },
-              child: const Text('Guardar'),
             ),
-          ],
-        );
-      },
-    );
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                },
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  final texto = controlador.text.trim();
 
-    controlador.dispose();
+                  if (texto.isNotEmpty) {
+                    Navigator.of(dialogContext).pop(texto);
+                  }
+                },
+                child: const Text('Guardar'),
+              ),
+            ],
+          );
+        },
+      );
+    } finally {
+      controlador.dispose();
+    }
 
-    if (nombre == null || nombre.isEmpty) return;
+    // Comprobamos que la pantalla siga activa.
+    if (!mounted) return;
+
+    // Si se cancela o el nombre está vacío, no guardamos nada.
+    if (nombre == null || nombre.trim().isEmpty) return;
 
     await guardarNuevoHabito(nombre);
   }
 
+  // Abre la pantalla de edición y guarda los cambios.
   Future<void> editarHabito(Habito habito) async {
     final resultado = await Navigator.push<Map<String, dynamic>>(
       context,
       MaterialPageRoute(
-        builder: (context) => EditarHabitoScreen(
-          nombre: habito.nombre,
-          color: habito.color,
-        ),
+        builder: (context) =>
+            EditarHabitoScreen(nombre: habito.nombre, color: habito.color),
       ),
     );
 
-    // Si se cancela, no modificamos nada.
     if (!mounted || resultado == null) return;
 
     final nuevoNombre = resultado['nombre'] as String;
@@ -165,22 +184,21 @@ class _InicioScreenState extends State<InicioScreen> {
     await PreferenciasService.guardarHabitos(habitos);
   }
 
+  // Elimina un hábito después de pedir confirmación.
   Future<void> eliminarHabito(Habito habito) async {
     final confirmar = await showDialog<bool>(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           title: const Text('Eliminar hábito'),
-          content: Text(
-            '¿Quieres eliminar "${habito.nombre}"?',
-          ),
+          content: Text('¿Quieres eliminar "${habito.nombre}"?'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context, false),
+              onPressed: () => Navigator.pop(dialogContext, false),
               child: const Text('Cancelar'),
             ),
             ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
+              onPressed: () => Navigator.pop(dialogContext, true),
               child: const Text('Eliminar'),
             ),
           ],
@@ -188,12 +206,10 @@ class _InicioScreenState extends State<InicioScreen> {
       },
     );
 
-    if (confirmar != true) return;
+    if (!mounted || confirmar != true) return;
 
     final nuevaLista = List<Habito>.from(habitos);
-    nuevaLista.removeWhere(
-          (elemento) => elemento.id == habito.id,
-    );
+    nuevaLista.removeWhere((elemento) => elemento.id == habito.id);
 
     await PreferenciasService.guardarHabitos(nuevaLista);
 
@@ -209,72 +225,90 @@ class _InicioScreenState extends State<InicioScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mis hábitos'),
-      ),
-      body: cargando
-          ? const Center(
-        child: CircularProgressIndicator(),
-      )
-          : Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                Text(
-                  '¡Hola, ${widget.nombre}!',
-                  style: Theme.of(context)
-                      .textTheme
-                      .headlineSmall,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Objetivo diario: ${widget.objetivo} hábitos',
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Progreso de hoy: '
-                      '${obtenerCompletadosHoy()} / '
-                      '${widget.objetivo}',
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: habitos.isEmpty
-                ? const Center(
-              child: Text(
-                'Todavía no tienes hábitos. '
-                    'Pulsa + para añadir uno.',
-                textAlign: TextAlign.center,
-              ),
-            )
-                : ListView.builder(
-              itemCount: habitos.length,
-              itemBuilder: (context, index) {
-                final habito = habitos[index];
-
-                return TarjetaHabito(
-                  habito: habito,
-                  completado: habito.fechasCompletado
-                      .contains(obtenerFechaHoy()),
-                  alCambiarCompletado: (completado) {
-                    cambiarCompletado(
-                      habito,
-                      completado,
-                    );
-                  },
-                  alEditar: () {
-                    editarHabito(habito);
-                  },
-                  alEliminar: () {
-                    eliminarHabito(habito);
-                  },
-                );
-              },
-            ),
+        actions: [
+          IconButton(
+            tooltip: 'Ajustes',
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AjustesScreen()),
+              );
+            },
           ),
         ],
       ),
+      body: cargando
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Text(
+                        '¡Hola, ${widget.nombre}!',
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      const SizedBox(height: 8),
+                      Text('Objetivo diario: ${widget.objetivo} hábitos'),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Progreso de hoy: '
+                        '${obtenerCompletadosHoy()} / ${widget.objetivo}',
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Escucha los cambios en la opción de ocultar completados.
+                Expanded(
+                  child: ValueListenableBuilder<bool>(
+                    valueListenable: PreferenciasService.ocultarCompletados,
+                    builder: (context, ocultar, child) {
+                      // Filtra solo los hábitos completados hoy.
+                      final habitosVisibles = ocultar
+                          ? habitos
+                                .where((habito) => !estaCompletadoHoy(habito))
+                                .toList()
+                          : habitos;
+
+                      if (habitosVisibles.isEmpty) {
+                        return Center(
+                          child: Text(
+                            habitos.isEmpty
+                                ? 'Todavía no tienes hábitos.\nPulsa + para añadir uno.'
+                                : '¡Has completado todos tus hábitos de hoy!',
+                            textAlign: TextAlign.center,
+                          ),
+                        );
+                      }
+
+                      return ListView.builder(
+                        itemCount: habitosVisibles.length,
+                        itemBuilder: (context, index) {
+                          final habito = habitosVisibles[index];
+
+                          return TarjetaHabito(
+                            habito: habito,
+                            completado: estaCompletadoHoy(habito),
+                            alCambiarCompletado: (completado) {
+                              cambiarCompletado(habito, completado);
+                            },
+                            alEditar: () {
+                              editarHabito(habito);
+                            },
+                            alEliminar: () {
+                              eliminarHabito(habito);
+                            },
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
       floatingActionButton: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -287,8 +321,7 @@ class _InicioScreenState extends State<InicioScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) =>
-                    const EstadisticasScreen(),
+                    builder: (context) => const EstadisticasScreen(),
                   ),
                 );
               },

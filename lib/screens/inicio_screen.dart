@@ -151,10 +151,8 @@ class _InicioScreenState extends State<InicioScreen> {
       controlador.dispose();
     }
 
-    // Comprobamos que la pantalla siga activa.
     if (!mounted) return;
 
-    // Si se cancela o el nombre está vacío, no guardamos nada.
     if (nombre == null || nombre.trim().isEmpty) return;
 
     await guardarNuevoHabito(nombre);
@@ -222,21 +220,7 @@ class _InicioScreenState extends State<InicioScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mis hábitos'),
-        actions: [
-          IconButton(
-            tooltip: 'Ajustes',
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AjustesScreen()),
-              );
-            },
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Mis hábitos')),
       body: cargando
           ? const Center(child: CircularProgressIndicator())
           : Column(
@@ -276,7 +260,8 @@ class _InicioScreenState extends State<InicioScreen> {
                         return Center(
                           child: Text(
                             habitos.isEmpty
-                                ? 'Todavía no tienes hábitos.\nPulsa + para añadir uno.'
+                                ? 'Todavía no tienes hábitos.\n'
+                                      'Pulsa + para añadir uno.'
                                 : '¡Has completado todos tus hábitos de hoy!',
                             textAlign: TextAlign.center,
                           ),
@@ -308,25 +293,45 @@ class _InicioScreenState extends State<InicioScreen> {
                 ),
               ],
             ),
-      floatingActionButton: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+      // Los tres botones aparecen juntos en la parte inferior derecha.
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 32),
-            child: FloatingActionButton(
-              heroTag: 'estadisticas',
-              tooltip: 'Estadísticas',
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const EstadisticasScreen(),
-                  ),
-                );
-              },
-              child: const Icon(Icons.bar_chart),
-            ),
+          // Botón de estadísticas.
+          FloatingActionButton(
+            heroTag: 'estadisticas',
+            tooltip: 'Estadísticas',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const EstadisticasScreen(),
+                ),
+              );
+            },
+            child: const Icon(Icons.bar_chart),
           ),
+
+          const SizedBox(height: 12),
+
+          // Botón de ajustes.
+          FloatingActionButton(
+            heroTag: 'ajustes',
+            tooltip: 'Ajustes',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AjustesScreen()),
+              );
+            },
+            child: const Icon(Icons.settings),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Botón para añadir un hábito.
           FloatingActionButton(
             heroTag: 'nuevoHabito',
             tooltip: 'Añadir hábito',

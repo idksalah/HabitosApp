@@ -33,6 +33,7 @@ class MyApp extends StatelessWidget {
           builder: (context, tamano, child) {
             return MaterialApp(
               title: 'HabitosApp',
+              debugShowCheckedModeBanner: false,
 
               // Configuración del tema claro.
               theme: ThemeData(
